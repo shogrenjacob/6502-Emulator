@@ -6,6 +6,10 @@ public class CPU
      * Zero Page ($0000 - $00FF)
      * System Stack ($0100 - $01FF)
      * Last 6 bytes of memory ($FFFA - $FFFF)
+     * 
+     * Notes
+     * _______________________
+     * Processor is Little Endian
     */
 {
     Int32 PC; // Program Counter
@@ -108,6 +112,27 @@ public class CPU
         }
     }
 
+    // Absolute Jump
+    private void INS_JMP_ABS(Memory mem)
+    {
+        byte byte1 = Fetch(mem);
+        byte byte2 = Fetch(mem);
+
+        ushort byte2Converted = (ushort)(byte2 << 8);
+
+        // Combine the two bytes for a 16 bit address, little endian so byte2 is the most significant byte.
+        ushort address = (ushort)(byte2Converted | (ushort)byte1);
+
+        PC = address;
+    }
+
+    // Indirect Jump
+    private void INS_JMP_IND(Memory mem)
+    {
+        INS_JMP_ABS(mem);
+        INS_JMP_ABS(mem);
+    }
+
     public void Reset(Memory mem)
     {
         PC = 0xFFFC;
@@ -157,10 +182,18 @@ public class CPU
                     INS_LDY_IM(mem);
                     break;
 
+                case 0x4C:
+                    INS_JMP_ABS(mem);
+                    break;
+
+                case 0x6C:
+                    INS_JMP_IND(mem);
+                    break;
+
                 default:
+                    Console.WriteLine($"Unrecognized command: {instruction}");
                     break;
             }
-
         }
     }
 }
@@ -173,10 +206,15 @@ public class Program
         CPU Cpu = new();
         Cpu.Reset(Memory);
 
-        Memory.data[0xFFFC] = 0xA0;
-        Memory.data[0xFFFD] = 0xA0;
+        Memory.data[0xFFFC] = 0x6C;
+        Memory.data[0xFFFD] = 0xFF;
+        Memory.data[0xFFFE] = 0xA9;
+        Memory.data[0xA9FF] = 0x11;
+        Memory.data[0xAA00] = 0x12;
+        Memory.data[0x1211] = 0xA9;
+        Memory.data[0x1212] = 0x01;
 
-        Cpu.Execute(2, Memory);
+        Cpu.Execute(7, Memory);
 
         Cpu.PrintPCSP();
         Cpu.PrintRegisters();
