@@ -1,16 +1,15 @@
 ﻿
+/* Reserved Memory Ranges
+ * ----------------------
+ * Zero Page ($0000 - $00FF)
+ * System Stack ($0100 - $01FF)
+ * Last 6 bytes of memory ($FFFA - $FFFF)
+ * 
+ * Notes
+ * _______________________
+ * Processor is Little Endian
+*/
 public class CPU
-
-    /* Reserved Memory Ranges
-     * ----------------------
-     * Zero Page ($0000 - $00FF)
-     * System Stack ($0100 - $01FF)
-     * Last 6 bytes of memory ($FFFA - $FFFF)
-     * 
-     * Notes
-     * _______________________
-     * Processor is Little Endian
-    */
 {
     Int32 PC; // Program Counter
     Int32 SP; // Stack Pointer
@@ -31,13 +30,13 @@ public class CPU
     public void PrintPCSP()
     {
         Console.WriteLine("---------- PC/SP ----------");
-        Console.WriteLine($"Program Counter: {PC} \n Stack Pointer: {SP}");
+        Console.WriteLine($"Program Counter: 0x{PC.ToString("X")} \n Stack Pointer: 0x{SP.ToString("X")}");
     }
 
     public void PrintRegisters()
     {
         Console.WriteLine("-------- Registers --------");
-        Console.WriteLine($"Accumulator: {Acc} \n X Register: {RegX} \n Y Register: {RegY}");
+        Console.WriteLine($"Accumulator: 0x{Acc.ToString("X")} \n X Register: 0x{RegX.ToString("X")} \n Y Register: 0x{RegY.ToString("X")}");
     }
 
     public void PrintFlags()
@@ -123,6 +122,12 @@ public class CPU
         // Combine the two bytes for a 16 bit address, little endian so byte2 is the most significant byte.
         ushort address = (ushort)(byte2Converted | (ushort)byte1);
 
+        if (address <= 0x01FF || address >= 0xFFFA )
+        {
+            Console.WriteLine($"Jump address invalid | address: {address}");
+            return;
+        }
+
         PC = address;
     }
 
@@ -150,7 +155,6 @@ public class CPU
         NegFlag = 0;
 
         mem.init();
-
     }
 
     public byte Fetch(Memory mem)
@@ -163,6 +167,7 @@ public class CPU
 
     public void Execute(Int32 cycles, Memory mem)
     {
+        // One cycle needed per command
         while (cycles > 0)
         {
             byte instruction = Fetch(mem);
@@ -204,29 +209,20 @@ public class Program
     {
         Memory Memory = new();
         CPU Cpu = new();
+        Input input = new();
+
         Cpu.Reset(Memory);
 
-        Memory.data[0xFFFC] = 0x6C;
-        Memory.data[0xFFFD] = 0xFF;
-        Memory.data[0xFFFE] = 0xA9;
-        Memory.data[0xA9FF] = 0x11;
-        Memory.data[0xAA00] = 0x12;
-        Memory.data[0x1211] = 0xA9;
-        Memory.data[0x1212] = 0x01;
+        input.GetFile();
+        for (int i = 0; i < input.data.Count; i++)
+        {
+            Memory.data[input.address[i]] = input.data[i];
+        }
 
-        Cpu.Execute(7, Memory);
+        Cpu.Execute(4, Memory);
 
         Cpu.PrintPCSP();
         Cpu.PrintRegisters();
         Cpu.PrintFlags();
-
-        // Initialize CPU state or load a program into memory here
-
-        // Run the CPU emulation loop
-        //while (true)
-        //{
-        //    // Fetch, decode, and execute instructions
-
-        //}
     }
 }
