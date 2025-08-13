@@ -235,6 +235,7 @@ public class CPU
 
             switch (instruction)
             {
+                // LDA Cases
                 case 0xA9:
                     LDA(mem, Immediate(mem));
                     break;
@@ -259,14 +260,57 @@ public class CPU
                     LDA(mem, AbsoluteY(mem));
                     break;
 
+                case 0xA1:
+                    LDA(mem, IndexedIndirect(mem));
+                    break;
+
+                case 0xB1:
+                    LDA(mem, IndirectIndexed(mem));
+                    break;
+                
+                // LDX Cases
                 case 0xA2:
                     LDX(mem, Immediate(mem));
                     break;
 
+                case 0xA6:
+                    LDX(mem, ZeroPage(mem));
+                    break;
+
+                case 0xB6:
+                    LDX(mem, ZeroPageY(mem));
+                    break;
+
+                case 0xAE:
+                    LDX(mem, Absolute(mem));
+                    break;
+
+                case 0xBE:
+                    LDX(mem, AbsoluteY(mem));
+                    break;
+
+                // LDY Cases
                 case 0xA0:
                     LDY(mem, Immediate(mem));
                     break;
 
+                case 0xA4:
+                    LDY(mem, ZeroPage(mem));
+                    break;
+
+                case 0xB4:
+                    LDY(mem, ZeroPageX(mem));
+                    break;
+
+                case 0xAC:
+                    LDY(mem, Absolute(mem));
+                    break;
+
+                case 0xBC:
+                    LDY(mem, AbsoluteX(mem));
+                    break;
+
+                // JMP Cases
                 case 0x4C:
                     JMP(mem, Absolute(mem));
                     break;
