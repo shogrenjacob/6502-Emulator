@@ -1,5 +1,4 @@
-﻿// TODO: add other addressing modes to use with instructions
-
+﻿
 /* Reserved Memory Ranges
  * ----------------------
  * Zero Page ($0000 - $00FF)
@@ -7,13 +6,13 @@
  * Last 6 bytes of memory ($FFFA - $FFFF)
  * 
  * Notes
- * -------------------------
+ * _______________________
  * Processor is Little Endian
 */
 public class CPU
 {
-    ushort PC; // Program Counter
-    ushort SP; // Stack Pointer
+    Int32 PC; // Program Counter
+    Int32 SP; // Stack Pointer
 
     byte Acc;  // Accumulator
     byte RegX;  // Index Register X
@@ -47,77 +46,12 @@ public class CPU
         Console.WriteLine($"Decimal Mode: {DecMode} \n Break Command: {BreakCmd} \n Overflow Flag: {OverflowFlag} \n Negative Flag: {NegFlag}");
     }
 
-    /* -------- ADDRESSING MODES -------- */
-    private ushort Immediate(Memory mem)
-    {
-        return PC++;
-    }
-
-    // Implicit needs no extra code
-
-    private byte ZeroPage(Memory mem)
-    {
-        byte address = Fetch(mem);
-        return address;
-    }
-
-    private byte ZeroPageX(Memory mem)
-    {
-        byte zeroPageAddress = Fetch(mem);
-        // C# implicitly truncates to be below 0x100 when casting to a byte, no need to manually wrap
-        return (byte)(zeroPageAddress + RegX);
-    }
-
-    private byte ZeroPageY(Memory mem)
-    {
-        byte zeroPageAddress = Fetch(mem);
-        // C# implicitly truncates to be below 0x100 when casting to a byte, no need to manually wrap
-        return (byte)(zeroPageAddress + RegY);
-    }
-
-    private ushort Relative(Memory mem)
-    {
-        sbyte offset = (sbyte)(Fetch(mem));
-        return (ushort)(PC + offset);
-    }
-
-    private ushort Absolute(Memory mem)
-    {
-        byte lo = Fetch(mem);
-        byte hi = Fetch(mem);
-
-        return (ushort)((hi << 8) | lo);
-    }
-
-    private ushort AbsoluteX(Memory mem)
-    {
-        return (ushort)(Absolute(mem) + RegX);
-    }
-
-    private ushort AbsoluteY(Memory mem)
-    {
-        return (ushort)(Absolute(mem) + RegY);
-    }
-
-    private ushort Indirect(Memory mem)
-    {
-        ushort indirectAdress = Absolute(mem);
-
-        byte lo = mem.data[indirectAdress];
-        byte hi = mem.data[indirectAdress + 1];
-
-        return (ushort)((hi << 8) | lo);
-    }
-
-    /* -------- INSTRUCTIONS -------- */
     // Immediate Load Accumulator
-    private void LDA(Memory mem, string addressingMode)
+    private void INS_LDA_IM(Memory mem)
     {
-        if (addressingMode == "Immediate")
-        {
-            ushort address = Immediate(mem);
-            Acc = mem.data[address];
-        }
+        // Load byte of memory into Accumulator
+        byte value = Fetch(mem);
+        Acc = value;
 
         // Set zero and Negative flags as appropriate
         if (Acc == 0)
@@ -204,40 +138,6 @@ public class CPU
         INS_JMP_ABS(mem);
     }
 
-    // Set Carry Flag
-    private void INS_SEC(Memory mem)
-    {
-        CarryFlag = 1;
-    }
-
-    // Set decimal flag
-    private void INS_SED(Memory mem)
-    {
-        DecMode = 1;
-    }
-
-    private void INS_AND_IM(Memory mem)
-    {
-        byte value = Fetch(mem);
-        byte result = (byte)(Acc & value);
-
-        if (result == 0)
-        {
-            ZeroFlag = 1;
-        }
-        else if (result < 0)
-        {
-            NegFlag = 1;
-        }
-        else
-        {
-            ZeroFlag = 0;
-            NegFlag = 0;
-        }
-
-        Acc = result;
-    }
-
     public void Reset(Memory mem)
     {
         PC = 0xFFFC;
@@ -276,7 +176,7 @@ public class CPU
             switch (instruction)
             {
                 case 0xA9:
-                    LDA(mem, "Immedatiate");
+                    INS_LDA_IM(mem);
                     break;
 
                 case 0xA2:
@@ -293,18 +193,6 @@ public class CPU
 
                 case 0x6C:
                     INS_JMP_IND(mem);
-                    break;
-
-                case 0x38:
-                    INS_SEC(mem);
-                    break;
-
-                case 0xF8:
-                    INS_SED(mem);
-                    break;
-
-                case 0x29:
-                    INS_AND_IM(mem);
                     break;
 
                 default:
