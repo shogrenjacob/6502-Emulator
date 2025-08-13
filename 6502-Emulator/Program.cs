@@ -103,9 +103,26 @@ public class CPU
         return address;
     }
 
+    private ushort IndexedIndirect(Memory mem)
+    {
+        byte zeroPageAddress = (byte)((mem.data[PC] + RegX) & 0xFF);
+        byte lo = mem.data[zeroPageAddress];
+        byte hi = mem.data[(zeroPageAddress + 1) & 0xFF];
+
+        return (ushort)((hi << 8) | lo);
+    }
+
     private ushort IndirectIndexed(Memory mem)
     {
+        byte zeroPageAddress = mem.data[PC];
+        byte lo = mem.data[zeroPageAddress];
 
+        // Ensure we don't leave zero page
+        byte hi = mem.data[(zeroPageAddress + 1) & 0xFF];
+
+        ushort baseAddress = (ushort)((hi << 8) | lo);
+
+        return (ushort)(baseAddress + RegY);
     }
 
     /* INSTRUCTIONS */
