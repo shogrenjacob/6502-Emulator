@@ -11,8 +11,8 @@
 */
 public class CPU
 {
-    Int32 PC; // Program Counter
-    Int32 SP; // Stack Pointer
+    ushort PC; // Program Counter
+    ushort SP; // Stack Pointer
 
     byte Acc;  // Accumulator
     byte RegX;  // Index Register X
@@ -46,17 +46,76 @@ public class CPU
         Console.WriteLine($"Decimal Mode: {DecMode} \n Break Command: {BreakCmd} \n Overflow Flag: {OverflowFlag} \n Negative Flag: {NegFlag}");
     }
 
-    // Immediate Load Accumulator
-    private void INS_LDA_IM(Memory mem)
+    /* ADRESSING MODES */
+    private ushort Immediate(Memory mem)
     {
-        // Load byte of memory into Accumulator
-        byte value = Fetch(mem);
-        Acc = value;
+        return PC;
+    }
 
-        // Set zero and Negative flags as appropriate
+    private byte ZeroPage(Memory mem)
+    {
+        byte address = mem.data[PC];
+        return address;
+    }
+
+    private byte ZeroPageX(Memory mem)
+    {
+        byte startingAddress = mem.data[PC];
+        
+        return (byte)(startingAddress + RegX);
+    }
+
+    private byte ZeroPageY(Memory mem)
+    {
+        byte startingAddress = mem.data[PC];
+
+        return (byte)(startingAddress + RegY);
+    }
+
+    private ushort Absolute(Memory mem)
+    {
+        byte lo = mem.data[PC];
+        PC++;
+        byte hi = mem.data[PC];
+
+        return (ushort)((hi << 8) | lo);
+    }
+
+    private ushort AbsoluteX(Memory mem)
+    {
+        ushort startingAddress = Absolute(mem);
+
+        return (ushort)(startingAddress + RegX);
+    }
+
+    private ushort AbsoluteY(Memory mem)
+    {
+        ushort startingAddress = Absolute(mem);
+
+        return (ushort)(startingAddress + RegY);
+    }
+
+    private ushort Indirect(Memory mem)
+    {
+        ushort initialAddress = Absolute(mem);
+        ushort address = (ushort)((mem.data[initialAddress + 1] << 8) | mem.data[initialAddress]);
+
+        return address;
+    }
+
+    private ushort IndirectIndexed(Memory mem)
+    {
+
+    }
+
+    /* INSTRUCTIONS */
+    private void LDA(Memory mem, ushort address)
+    {
+        Acc = mem.data[address];
+
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+            ZeroFlag = 0;
         }
         else if (Acc < 0)
         {
@@ -64,20 +123,20 @@ public class CPU
         }
         else
         {
-            ZeroFlag = 0;
             NegFlag = 0;
+            ZeroFlag = 0;
         }
+
+        PC++;
     }
 
-    // Immediate Load Register X
-    private void INS_LDX_IM(Memory mem)
+    private void LDX(Memory mem, ushort address)
     {
-        byte value = Fetch(mem);
-        RegX = value;
+        RegX = mem.data[address];
 
         if (RegX == 0)
         {
-            ZeroFlag = 1;
+            ZeroFlag = 0;
         }
         else if (RegX < 0)
         {
@@ -85,20 +144,20 @@ public class CPU
         }
         else
         {
-            ZeroFlag = 0;
             NegFlag = 0;
+            ZeroFlag = 0;
         }
+
+        PC++;
     }
 
-    // Immediate Load Register Y
-    private void INS_LDY_IM(Memory mem)
+    private void LDY(Memory mem, ushort address)
     {
-        byte value = Fetch(mem);
-        RegY = value;
+        RegY = mem.data[address];
 
         if (RegY == 0)
         {
-            ZeroFlag = 1;
+            ZeroFlag = 0;
         }
         else if (RegY < 0)
         {
@@ -106,36 +165,16 @@ public class CPU
         }
         else
         {
-            ZeroFlag = 0;
             NegFlag = 0;
+            ZeroFlag = 0;
         }
+
+        PC++;
     }
 
-    // Absolute Jump
-    private void INS_JMP_ABS(Memory mem)
+    private void JMP(Memory mem, ushort address)
     {
-        byte byte1 = Fetch(mem);
-        byte byte2 = Fetch(mem);
-
-        ushort byte2Converted = (ushort)(byte2 << 8);
-
-        // Combine the two bytes for a 16 bit address, little endian so byte2 is the most significant byte.
-        ushort address = (ushort)(byte2Converted | (ushort)byte1);
-
-        if (address <= 0x01FF || address >= 0xFFFA )
-        {
-            Console.WriteLine($"Jump address invalid | address: {address}");
-            return;
-        }
-
         PC = address;
-    }
-
-    // Indirect Jump
-    private void INS_JMP_IND(Memory mem)
-    {
-        INS_JMP_ABS(mem);
-        INS_JMP_ABS(mem);
     }
 
     public void Reset(Memory mem)
@@ -157,12 +196,15 @@ public class CPU
         mem.init();
     }
 
-    public byte Fetch(Memory mem)
+    public byte Read(Memory mem)
     {
-        byte data = mem.data[PC];
-        PC++;
+        return mem.data[PC];
+    }
 
-        return data;
+    public byte Write(Memory mem, byte val)
+    {
+        mem.data[PC] = val;
+        return mem.data[PC];
     }
 
     public void Execute(Int32 cycles, Memory mem)
@@ -170,29 +212,50 @@ public class CPU
         // One cycle needed per command
         while (cycles > 0)
         {
-            byte instruction = Fetch(mem);
+            byte instruction = Read(mem);
+            PC++;
             cycles--;
 
             switch (instruction)
             {
                 case 0xA9:
-                    INS_LDA_IM(mem);
+                    LDA(mem, Immediate(mem));
+                    break;
+
+                case 0xA5:
+                    LDA(mem, ZeroPage(mem));
+                    break;
+
+                case 0xB5:
+                    LDA(mem, ZeroPageX(mem));
+                    break;
+
+                case 0xAD:
+                    LDA(mem, Absolute(mem));
+                    break;
+
+                case 0xBD:
+                    LDA(mem, AbsoluteX(mem));
+                    break;
+
+                case 0xB9:
+                    LDA(mem, AbsoluteY(mem));
                     break;
 
                 case 0xA2:
-                    INS_LDX_IM(mem);
+                    LDX(mem, Immediate(mem));
                     break;
 
                 case 0xA0:
-                    INS_LDY_IM(mem);
+                    LDY(mem, Immediate(mem));
                     break;
 
                 case 0x4C:
-                    INS_JMP_ABS(mem);
+                    JMP(mem, Absolute(mem));
                     break;
 
-                case 0x6C:
-                    INS_JMP_IND(mem);
+                case 0x6C: 
+                    JMP(mem, Indirect(mem));
                     break;
 
                 default:
@@ -219,7 +282,7 @@ public class Program
             Memory.data[input.address[i]] = input.data[i];
         }
 
-        Cpu.Execute(4, Memory);
+        Cpu.Execute(2, Memory);
 
         Cpu.PrintPCSP();
         Cpu.PrintRegisters();
