@@ -9,6 +9,21 @@
  * _______________________
  * Processor is Little Endian
 */
+
+public struct Instruction
+{
+    public Func<Memory, ushort> AddressingMode; // takes in Memory, returns a ushort (address)
+    public Action<Memory, ushort> Operation; // takes in Memory and a ushort, returns void
+    public int Cycles;
+
+    public Instruction(Func<Memory, ushort> mode, Action<Memory, ushort> op, int cycles)
+    {
+        this.AddressingMode = mode;
+        this.Operation = op;
+        this.Cycles = cycles;
+    }
+}
+
 public class CPU
 {
     ushort PC; // Program Counter
@@ -25,6 +40,39 @@ public class CPU
     byte BreakCmd = 1;
     byte OverflowFlag = 1;
     byte NegFlag = 1;
+
+    Dictionary<byte, Instruction> LookupTable = new();
+
+    public void LoadLookupTable()
+    {
+        // LDA Instructions
+        LookupTable.Add(0xA9, new Instruction(Immediate, LDA, 2));
+        LookupTable.Add(0xA5, new Instruction(ZeroPage, LDA, 3));
+        LookupTable.Add(0xB5, new Instruction(ZeroPageX, LDA, 4));
+        LookupTable.Add(0xAD, new Instruction(Absolute, LDA, 4));
+        LookupTable.Add(0xBD, new Instruction(AbsoluteX, LDA, 4));
+        LookupTable.Add(0xB9, new Instruction(AbsoluteY, LDA, 4));
+        LookupTable.Add(0xA1, new Instruction(IndexedIndirect, LDA, 6));
+        LookupTable.Add(0xB1, new Instruction(IndirectIndexed, LDA, 5));
+
+        // LDX Instructions
+        LookupTable.Add(0xA2, new Instruction(Immediate, LDX, 2));
+        LookupTable.Add(0xA6, new Instruction(ZeroPage, LDX, 3));
+        LookupTable.Add(0xB6, new Instruction(ZeroPageY, LDX, 4));
+        LookupTable.Add(0xAE, new Instruction(Absolute, LDX, 4));
+        LookupTable.Add(0xBE, new Instruction(AbsoluteY, LDX, 4));
+
+        // LDY Instructions
+        LookupTable.Add(0xA0, new Instruction(Immediate, LDY, 2));
+        LookupTable.Add(0xA4, new Instruction(ZeroPage, LDY, 3));
+        LookupTable.Add(0xB4, new Instruction(ZeroPageX, LDY, 4));
+        LookupTable.Add(0xAC, new Instruction(Absolute, LDY, 4));
+        LookupTable.Add(0xBC, new Instruction(AbsoluteX, LDY, 4));
+
+        // JMP Instructions
+        LookupTable.Add(0x4C, new Instruction(Absolute, JMP, 3));
+        LookupTable.Add(0x6C, new Instruction(Indirect, JMP, 5));
+    }
 
     // For Debugging
     public void PrintPCSP()
@@ -52,20 +100,20 @@ public class CPU
         return PC;
     }
 
-    private byte ZeroPage(Memory mem)
+    private ushort ZeroPage(Memory mem)
     {
         byte address = mem.data[PC];
         return address;
     }
 
-    private byte ZeroPageX(Memory mem)
+    private ushort ZeroPageX(Memory mem)
     {
         byte startingAddress = mem.data[PC];
         
         return (byte)(startingAddress + RegX);
     }
 
-    private byte ZeroPageY(Memory mem)
+    private ushort ZeroPageY(Memory mem)
     {
         byte startingAddress = mem.data[PC];
 
@@ -213,6 +261,8 @@ public class CPU
         mem.init();
     }
 
+    /* FETCH, DECODE, EXECUTE */
+
     public byte Read(Memory mem)
     {
         return mem.data[PC];
@@ -233,100 +283,15 @@ public class CPU
             PC++;
             cycles--;
 
-            switch (instruction)
-            {
-                // LDA Cases
-                case 0xA9:
-                    LDA(mem, Immediate(mem));
-                    break;
+            Instruction CurrentInstruction = LookupTable[instruction];
+            ushort address = CurrentInstruction.AddressingMode(mem);
 
-                case 0xA5:
-                    LDA(mem, ZeroPage(mem));
-                    break;
-
-                case 0xB5:
-                    LDA(mem, ZeroPageX(mem));
-                    break;
-
-                case 0xAD:
-                    LDA(mem, Absolute(mem));
-                    break;
-
-                case 0xBD:
-                    LDA(mem, AbsoluteX(mem));
-                    break;
-
-                case 0xB9:
-                    LDA(mem, AbsoluteY(mem));
-                    break;
-
-                case 0xA1:
-                    LDA(mem, IndexedIndirect(mem));
-                    break;
-
-                case 0xB1:
-                    LDA(mem, IndirectIndexed(mem));
-                    break;
-                
-                // LDX Cases
-                case 0xA2:
-                    LDX(mem, Immediate(mem));
-                    break;
-
-                case 0xA6:
-                    LDX(mem, ZeroPage(mem));
-                    break;
-
-                case 0xB6:
-                    LDX(mem, ZeroPageY(mem));
-                    break;
-
-                case 0xAE:
-                    LDX(mem, Absolute(mem));
-                    break;
-
-                case 0xBE:
-                    LDX(mem, AbsoluteY(mem));
-                    break;
-
-                // LDY Cases
-                case 0xA0:
-                    LDY(mem, Immediate(mem));
-                    break;
-
-                case 0xA4:
-                    LDY(mem, ZeroPage(mem));
-                    break;
-
-                case 0xB4:
-                    LDY(mem, ZeroPageX(mem));
-                    break;
-
-                case 0xAC:
-                    LDY(mem, Absolute(mem));
-                    break;
-
-                case 0xBC:
-                    LDY(mem, AbsoluteX(mem));
-                    break;
-
-                // JMP Cases
-                case 0x4C:
-                    JMP(mem, Absolute(mem));
-                    break;
-
-                case 0x6C: 
-                    JMP(mem, Indirect(mem));
-                    break;
-
-                default:
-                    Console.WriteLine($"Unrecognized command: {instruction}");
-                    break;
-            }
+            CurrentInstruction.Operation(mem, address);
         }
     }
 }
 
+/* ENTRY POINT */
 public class Program
 {
     public static void Main(string[] args)
@@ -336,6 +301,7 @@ public class Program
         Input input = new();
 
         Cpu.Reset(Memory);
+        Cpu.LoadLookupTable();
 
         input.GetFile();
         for (int i = 0; i < input.data.Count; i++)
