@@ -16,6 +16,7 @@ public struct Instruction
     public Action<Memory, ushort> Operation; // takes in Memory and a ushort, returns void
     public int Cycles;
 
+    // Mode can be null to represent the implied addressing mode
     public Instruction(Func<Memory, ushort> mode, Action<Memory, ushort> op, int cycles)
     {
         this.AddressingMode = mode;
@@ -45,7 +46,7 @@ public class CPU
 
     public void LoadLookupTable()
     {
-        // LDA Instructions
+        // LDA
         LookupTable.Add(0xA9, new Instruction(Immediate, LDA, 2));
         LookupTable.Add(0xA5, new Instruction(ZeroPage, LDA, 3));
         LookupTable.Add(0xB5, new Instruction(ZeroPageX, LDA, 4));
@@ -55,23 +56,69 @@ public class CPU
         LookupTable.Add(0xA1, new Instruction(IndexedIndirect, LDA, 6));
         LookupTable.Add(0xB1, new Instruction(IndirectIndexed, LDA, 5));
 
-        // LDX Instructions
+        // LDX
         LookupTable.Add(0xA2, new Instruction(Immediate, LDX, 2));
         LookupTable.Add(0xA6, new Instruction(ZeroPage, LDX, 3));
         LookupTable.Add(0xB6, new Instruction(ZeroPageY, LDX, 4));
         LookupTable.Add(0xAE, new Instruction(Absolute, LDX, 4));
         LookupTable.Add(0xBE, new Instruction(AbsoluteY, LDX, 4));
 
-        // LDY Instructions
+        // LDY
         LookupTable.Add(0xA0, new Instruction(Immediate, LDY, 2));
         LookupTable.Add(0xA4, new Instruction(ZeroPage, LDY, 3));
         LookupTable.Add(0xB4, new Instruction(ZeroPageX, LDY, 4));
         LookupTable.Add(0xAC, new Instruction(Absolute, LDY, 4));
         LookupTable.Add(0xBC, new Instruction(AbsoluteX, LDY, 4));
 
-        // JMP Instructions
+        // JMP
         LookupTable.Add(0x4C, new Instruction(Absolute, JMP, 3));
         LookupTable.Add(0x6C, new Instruction(Indirect, JMP, 5));
+
+        // INX, INY
+        LookupTable.Add(0xE8, new Instruction(Implied, INX, 2));
+        LookupTable.Add(0xC8, new Instruction(Implied, INY, 2));
+
+        // INC
+        LookupTable.Add(0xE6, new Instruction(ZeroPage, INC, 5));
+        LookupTable.Add(0xF6, new Instruction(ZeroPageX, INC, 6));
+        LookupTable.Add(0xEE, new Instruction(Absolute, INC, 6));
+        LookupTable.Add(0xFE, new Instruction(AbsoluteX, INC, 7));
+
+        // DEX, DEY
+        LookupTable.Add(0xCA, new Instruction(Implied, DEX, 2));
+        LookupTable.Add(0x88, new Instruction(Implied, DEY, 2));
+
+        // DEC
+        LookupTable.Add(0xC6, new Instruction(ZeroPage, DEC, 5));
+        LookupTable.Add(0xD6, new Instruction(ZeroPageX, DEC, 6));
+        LookupTable.Add(0xCE, new Instruction(Absolute, DEC, 6));
+        LookupTable.Add(0xDE, new Instruction(AbsoluteX, DEC, 7));
+
+        // CMP
+        LookupTable.Add(0xC9, new Instruction(Immediate, CMP, 2));
+        LookupTable.Add(0xC5, new Instruction(ZeroPage, CMP, 3));
+        LookupTable.Add(0xD5, new Instruction(ZeroPageX, CMP, 4));
+        LookupTable.Add(0xCD, new Instruction(Absolute, CMP, 4));
+        LookupTable.Add(0xDD, new Instruction(AbsoluteX, CMP, 4));
+        LookupTable.Add(0xD9, new Instruction(AbsoluteY, CMP, 4));
+        LookupTable.Add(0xC1, new Instruction(IndexedIndirect, CMP, 6));
+        LookupTable.Add(0xD1, new Instruction(IndirectIndexed, CMP, 5));
+
+        // CPX
+        LookupTable.Add(0xE0, new Instruction(Immediate, CPX, 2));
+        LookupTable.Add(0xE4, new Instruction(ZeroPage, CPX, 3));
+        LookupTable.Add(0xEC, new Instruction(Absolute, CPX, 4));
+
+        // CPY
+        LookupTable.Add(0xC0, new Instruction(Immediate, CPY, 2));
+        LookupTable.Add(0xC4, new Instruction(ZeroPage, CPY, 3));
+        LookupTable.Add(0xCC, new Instruction(Absolute, CPY, 4));
+
+        // Clears
+        LookupTable.Add(0x18, new Instruction(Implied, CLC, 2));
+        LookupTable.Add(0xD8, new Instruction(Implied, CLD, 2));
+        LookupTable.Add(0x58, new Instruction(Implied, CLI, 2));
+        LookupTable.Add(0xB8, new Instruction(Implied, CLV, 2));
     }
 
     // For Debugging
@@ -95,6 +142,11 @@ public class CPU
     }
 
     /* ADRESSING MODES */
+
+    private ushort Implied(Memory mem)
+    {
+        return 0;
+    }
     private ushort Immediate(Memory mem)
     {
         return PC;
@@ -237,6 +289,219 @@ public class CPU
         PC++;
     }
 
+    private void INX(Memory mem, ushort address)
+    {
+        RegX++;
+
+        if (RegX == 0)
+        {
+            ZeroFlag = 0;
+        }
+        else if (RegX < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void INY(Memory mem, ushort address)
+    {
+        RegY++;
+
+        if (RegY == 0)
+        {
+            ZeroFlag = 0;
+        }
+        else if (RegY < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void INC(Memory mem, ushort address)
+    {
+        mem.data[address]++;
+
+        if (mem.data[address] == 0)
+        {
+            ZeroFlag = 0;
+        }
+        else if (mem.data[address] < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void DEC(Memory mem, ushort address)
+    {
+        mem.data[address]--;
+
+        if (mem.data[address] == 0)
+        {
+            ZeroFlag = 0;
+        }
+        else if (mem.data[address] < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void DEX(Memory mem, ushort address)
+    {
+        RegX--;
+
+        if (RegX == 0)
+        {
+            ZeroFlag = 0;
+        }
+        else if (RegX < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void DEY(Memory mem, ushort address)
+    {
+        RegY--;
+
+        if (RegY == 0)
+        {
+            ZeroFlag = 0;
+        }
+        else if (RegY < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void CMP(Memory mem, ushort address)
+    {
+        int result = Acc - mem.data[address];
+
+        if (result >= 0)
+        {
+            CarryFlag = 1;
+
+            if (result == 0)
+            {
+                ZeroFlag = 1;
+            }
+        }
+        else
+        {
+            NegFlag = 1;
+        }
+
+        PC++;
+    }
+
+    private void CPX(Memory mem, ushort address)
+    {
+        int result = RegX - mem.data[address];
+
+        if (result >= 0)
+        {
+            CarryFlag = 1;
+
+            if (result == 0)
+            {
+                ZeroFlag = 1;
+            }
+        }
+        else
+        {
+            NegFlag = 1;
+        }
+
+        PC++;
+    }
+
+    private void CPY(Memory mem, ushort address)
+    {
+        int result = RegY - mem.data[address];
+
+        if (result >= 0)
+        {
+            CarryFlag = 1;
+
+            if (result == 0)
+            {
+                ZeroFlag = 1;
+            }
+        }
+        else
+        {
+            NegFlag = 1;
+        }
+
+        PC++;
+    }
+
+    private void CLC(Memory mem, ushort address)
+    {
+        CarryFlag = 0;
+        PC++;
+    }
+
+    private void CLD(Memory mem, ushort address)
+    {
+        DecMode = 0;
+        PC++;
+    }
+
+    private void CLI(Memory mem, ushort address)
+    {
+        InterruptDisable = 0;
+        PC++;
+    }
+
+    private void CLV(Memory mem, ushort address)
+    {
+        OverflowFlag = 0;
+        PC++;
+    }
+
     private void JMP(Memory mem, ushort address)
     {
         PC = address;
@@ -309,7 +574,7 @@ public class Program
             Memory.data[input.address[i]] = input.data[i];
         }
 
-        Cpu.Execute(2, Memory);
+        Cpu.Execute(1, Memory);
 
         Cpu.PrintPCSP();
         Cpu.PrintRegisters();
