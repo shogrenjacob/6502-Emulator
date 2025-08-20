@@ -28,7 +28,7 @@ public struct Instruction
 public class CPU
 {
     ushort PC; // Program Counter
-    ushort SP; // Stack Pointer
+    byte SP; // Stack Pointer, add 0x100 to get true address
 
     byte Acc;  // Accumulator
     byte RegX;  // Index Register X
@@ -119,6 +119,40 @@ public class CPU
         LookupTable.Add(0xD8, new Instruction(Implied, CLD, 2));
         LookupTable.Add(0x58, new Instruction(Implied, CLI, 2));
         LookupTable.Add(0xB8, new Instruction(Implied, CLV, 2));
+
+        // NOP
+        LookupTable.Add(0xEA, new Instruction(Implied, NOP, 2));
+
+        // Push, Pull Acc
+        LookupTable.Add(0x48, new Instruction(Implied, PHA, 3));
+        LookupTable.Add(0x68, new Instruction(Implied, PLA, 4));
+
+        // STA
+        LookupTable.Add(0x85, new Instruction(ZeroPage, STA, 3));
+        LookupTable.Add(0x95, new Instruction(ZeroPageX, STA, 4));
+        LookupTable.Add(0x8D, new Instruction(Absolute, STA, 4));
+        LookupTable.Add(0x9D, new Instruction(AbsoluteX, STA, 5));
+        LookupTable.Add(0x99, new Instruction(AbsoluteY, STA, 5));
+        LookupTable.Add(0x81, new Instruction(IndexedIndirect, STA, 6));
+        LookupTable.Add(0x91, new Instruction(IndirectIndexed, STA, 6));
+
+        // STX
+        LookupTable.Add(0x86, new Instruction(ZeroPage, STX, 3));
+        LookupTable.Add(0x96, new Instruction(ZeroPageY, STX, 4));
+        LookupTable.Add(0x8E, new Instruction(Absolute, STX, 4));
+
+        // STY
+        LookupTable.Add(0x84, new Instruction(ZeroPage, STY, 3));
+        LookupTable.Add(0x94, new Instruction(ZeroPageX, STY, 4));
+        LookupTable.Add(0x8C, new Instruction(Absolute, STY, 4));
+
+        // Transfers
+        LookupTable.Add(0xAA, new Instruction(Implied, TAX, 2));
+        LookupTable.Add(0xA8, new Instruction(Implied, TAY, 2));
+        LookupTable.Add(0xBA, new Instruction(Implied, TSX, 2));
+        LookupTable.Add(0x8A, new Instruction(Implied, TXA, 2));
+        LookupTable.Add(0x9A, new Instruction(Implied, TXS, 2));
+        LookupTable.Add(0x98, new Instruction(Implied, TYA, 2));
     }
 
     // For Debugging
@@ -232,7 +266,7 @@ public class CPU
 
         if (Acc == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (Acc < 0)
         {
@@ -253,7 +287,7 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (RegX < 0)
         {
@@ -274,7 +308,7 @@ public class CPU
 
         if (RegY == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (RegY < 0)
         {
@@ -295,7 +329,7 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (RegX < 0)
         {
@@ -316,7 +350,7 @@ public class CPU
 
         if (RegY == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (RegY < 0)
         {
@@ -337,7 +371,7 @@ public class CPU
 
         if (mem.data[address] == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (mem.data[address] < 0)
         {
@@ -358,7 +392,7 @@ public class CPU
 
         if (mem.data[address] == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (mem.data[address] < 0)
         {
@@ -379,7 +413,7 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (RegX < 0)
         {
@@ -400,7 +434,7 @@ public class CPU
 
         if (RegY == 0)
         {
-            ZeroFlag = 0;
+            ZeroFlag = 1;
         }
         else if (RegY < 0)
         {
@@ -507,10 +541,173 @@ public class CPU
         PC = address;
     }
 
+    private void NOP(Memory mem, ushort address)
+    {
+        PC++;
+    }
+
+    private void PHA(Memory mem, ushort address)
+    {
+        mem.data[SP + 0x100] = Acc;
+        SP++;
+        PC++;
+    }
+
+    private void PLA(Memory mem, ushort address)
+    {
+        Acc = mem.data[SP + 0x100];
+
+        if (Acc == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if (Acc < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        SP--;
+        PC++;
+    }
+
+    private void STA(Memory mem, ushort address)
+    {
+        mem.data[address] = Acc;
+        PC++;
+    }
+
+    private void STX(Memory mem, ushort address)
+    {
+        mem.data[address] = RegX;
+        PC++;
+    }
+
+    private void STY(Memory mem, ushort address)
+    {
+        mem.data[address] = RegY;
+        PC++;
+    }
+
+    private void TAX(Memory mem, ushort address)
+    {
+        RegX = Acc;
+
+        if (RegX == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if (RegX < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void TAY(Memory mem, ushort address)
+    {
+        RegY = Acc;
+
+        if (RegY == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if (RegY < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void TSX(Memory mem, ushort address)
+    {
+        RegX = SP;
+
+        if (RegX == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if (RegX < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void TXA(Memory mem, ushort address)
+    {
+        Acc = RegX;
+
+        if (Acc == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if (Acc < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+
+        PC++;
+    }
+
+    private void TXS(Memory mem, ushort address)
+    {
+        SP = RegX;
+        PC++;
+    }
+
+    private void TYA(Memory mem, ushort address)
+    {
+        Acc = RegY;
+
+        if (Acc == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if (Acc < 0)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            ZeroFlag = 0;
+            NegFlag = 0;
+        }
+
+        PC++;
+    }
+
     public void Reset(Memory mem)
     {
         PC = 0xFFFC;
-        SP = 0x0100;
+        SP = 0x00;
 
         DecMode = 0;
         Acc = 0;
