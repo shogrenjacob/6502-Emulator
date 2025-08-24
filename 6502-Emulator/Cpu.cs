@@ -155,6 +155,11 @@ public class CPU
         LookupTable.Add(0x10, new Instruction(Relative, BPL, 2));
         LookupTable.Add(0x50, new Instruction(Relative, BVC, 2));
         LookupTable.Add(0x70, new Instruction(Relative, BVS, 2));
+
+        // Sets
+        LookupTable.Add(0x38, new Instruction(Implied, SEC, 2));
+        LookupTable.Add(0xF8, new Instruction(Implied, SED, 2));
+        LookupTable.Add(0x78, new Instruction(Implied, SEI, 2));
     }
 
     // For Debugging
@@ -366,6 +371,24 @@ public class CPU
         {
             PC++;
         }
+    }
+
+    private void SEC(Memory mem, ushort address)
+    {
+        CarryFlag = 1;
+        PC++;
+    }
+
+    private void SED(Memory mem, ushort address)
+    {
+        DecMode = 1;
+        PC++;
+    }
+
+    private void SEI(Memory mem, ushort address)
+    {
+        InterruptDisable = 1;
+        PC++;
     }
 
     private void LDA(Memory mem, ushort address)
