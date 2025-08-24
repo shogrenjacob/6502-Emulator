@@ -39,7 +39,7 @@ public class Input
                         }
                         else if (extension == ".asm")
                         {
-                            // Use Asembler
+                            // Use Assembler
                             break;
                         }
                         else
