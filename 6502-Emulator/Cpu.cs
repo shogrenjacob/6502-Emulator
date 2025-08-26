@@ -160,6 +160,40 @@ public class CPU
         LookupTable.Add(0x38, new Instruction(Implied, SEC, 2));
         LookupTable.Add(0xF8, new Instruction(Implied, SED, 2));
         LookupTable.Add(0x78, new Instruction(Implied, SEI, 2));
+
+        // AND
+        LookupTable.Add(0x29, new Instruction(Immediate, AND, 2));
+        LookupTable.Add(0x25, new Instruction(ZeroPage, AND, 3));
+        LookupTable.Add(0x35, new Instruction(ZeroPageX, AND, 4));
+        LookupTable.Add(0x2D, new Instruction(Absolute, AND, 4));
+        LookupTable.Add(0x3D, new Instruction(AbsoluteX, AND, 4));
+        LookupTable.Add(0x39, new Instruction(AbsoluteY, AND, 4));
+        LookupTable.Add(0x21, new Instruction(IndexedIndirect, AND, 6));
+        LookupTable.Add(0x31, new Instruction(IndirectIndexed, AND, 5));
+
+        // BIT
+        LookupTable.Add(0x24, new Instruction(ZeroPage, BIT, 3));
+        LookupTable.Add(0x2C, new Instruction(Absolute, BIT, 4));
+
+        // EOR
+        LookupTable.Add(0x49, new Instruction(Immediate, EOR, 2));
+        LookupTable.Add(0x45, new Instruction(ZeroPage, EOR, 3));
+        LookupTable.Add(0x55, new Instruction(ZeroPageX, EOR, 4));
+        LookupTable.Add(0x4D, new Instruction(Absolute, EOR, 4));
+        LookupTable.Add(0x5D, new Instruction(AbsoluteX, EOR, 4));
+        LookupTable.Add(0x59, new Instruction(AbsoluteY, EOR, 4));
+        LookupTable.Add(0x41, new Instruction(IndexedIndirect, EOR, 6));
+        LookupTable.Add(0x51, new Instruction(IndirectIndexed, EOR, 5));
+
+        // ORA
+        LookupTable.Add(0x09, new Instruction(Immediate, ORA, 2));
+        LookupTable.Add(0x05, new Instruction(ZeroPage, ORA, 3));
+        LookupTable.Add(0x15, new Instruction(ZeroPageX, ORA, 4));
+        LookupTable.Add(0x0D, new Instruction(Absolute, ORA, 4));
+        LookupTable.Add(0x1D, new Instruction(AbsoluteX, ORA, 4));
+        LookupTable.Add(0x19, new Instruction(AbsoluteY, ORA, 4));
+        LookupTable.Add(0x01, new Instruction(IndexedIndirect, ORA, 6));
+        LookupTable.Add(0x11, new Instruction(IndirectIndexed, ORA, 5));
     }
 
     // For Debugging
@@ -188,6 +222,12 @@ public class CPU
     {
         return 0;
     }
+
+    private ushort Accumulator(Memory mem)
+    {
+        return Acc;
+    }
+
     private ushort Immediate(Memory mem)
     {
         return PC;
@@ -835,6 +875,88 @@ public class CPU
         PC++;
     }
 
+    private void AND(Memory mem, ushort address)
+    {
+        Acc = (byte)(Acc & Read(mem));
+
+        if (Acc == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if ((Acc & 128) == 128)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            ZeroFlag = 0;
+            NegFlag = 0;
+        }
+    }
+
+    private void ASL(Memory mem, ushort address)
+    {
+
+    }
+
+    private void BIT(Memory mem, ushort address)
+    {
+        byte result = (byte)(Acc & Read(mem));
+
+        if ((result & 128) == 128)
+        {
+            NegFlag = 1;
+        }
+
+        if ((result & 64) == 64)
+        {
+            OverflowFlag = 1;
+        }
+
+        if (result == 0)
+        {
+            ZeroFlag = 1;
+        }
+    }
+
+    private void EOR(Memory mem, ushort address)
+    {
+        Acc = (byte)(Acc ^ Read(mem));
+
+        if (Acc == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if ((byte)(Acc & 128) == 128)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+    }
+
+    private void ORA(Memory mem, ushort address)
+    {
+        Acc = (byte)(Acc | Read(mem));
+
+        if (Acc == 0)
+        {
+            ZeroFlag = 1;
+        }
+        else if ((byte)(Acc & 128) == 128)
+        {
+            NegFlag = 1;
+        }
+        else
+        {
+            NegFlag = 0;
+            ZeroFlag = 0;
+        }
+    }
+
     public void Reset(Memory mem)
     {
         PC = 0xFFFC;
@@ -854,8 +976,6 @@ public class CPU
         mem.init();
     }
 
-    /* FETCH, DECODE, EXECUTE */
-
     public byte Read(Memory mem)
     {
         return mem.data[PC];
@@ -867,6 +987,7 @@ public class CPU
         return mem.data[PC];
     }
 
+    /* FETCH, DECODE, EXECUTE */
     public void Execute(Int32 cycles, Memory mem)
     {
         // One cycle needed per command
