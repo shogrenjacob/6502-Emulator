@@ -194,6 +194,10 @@ public class CPU
         LookupTable.Add(0x19, new Instruction(AbsoluteY, ORA, 4));
         LookupTable.Add(0x01, new Instruction(IndexedIndirect, ORA, 6));
         LookupTable.Add(0x11, new Instruction(IndirectIndexed, ORA, 5));
+
+        // Subroutines
+        LookupTable.Add(0x60, new Instruction(Implied, RTS, 6));
+        LookupTable.Add(0x20, new Instruction(Absolute, JSR, 6));
     }
 
     // For Debugging
@@ -242,7 +246,7 @@ public class CPU
     private ushort ZeroPageX(Memory mem)
     {
         byte startingAddress = mem.data[PC];
-        
+
         return (byte)(startingAddress + RegX);
     }
 
@@ -720,7 +724,7 @@ public class CPU
     private void PHA(Memory mem, ushort address)
     {
         mem.data[SP + 0x100] = Acc;
-        SP++;
+        SP--;
         PC++;
     }
 
@@ -877,7 +881,7 @@ public class CPU
 
     private void AND(Memory mem, ushort address)
     {
-        Acc = (byte)(Acc & Read(mem));
+        Acc = (byte)(Acc & mem.data[address]);
 
         if (Acc == 0)
         {
@@ -901,7 +905,7 @@ public class CPU
 
     private void BIT(Memory mem, ushort address)
     {
-        byte result = (byte)(Acc & Read(mem));
+        byte result = (byte)(Acc & mem.data[address]);
 
         if ((result & 128) == 128)
         {
@@ -921,7 +925,7 @@ public class CPU
 
     private void EOR(Memory mem, ushort address)
     {
-        Acc = (byte)(Acc ^ Read(mem));
+        Acc = (byte)(Acc ^ mem.data[address]);
 
         if (Acc == 0)
         {
@@ -940,7 +944,7 @@ public class CPU
 
     private void ORA(Memory mem, ushort address)
     {
-        Acc = (byte)(Acc | Read(mem));
+        Acc = (byte)(Acc | mem.data[address]);
 
         if (Acc == 0)
         {
@@ -957,10 +961,36 @@ public class CPU
         }
     }
 
+    private void JSR(Memory mem, ushort address)
+    {
+        byte returnAddressHi = (byte)((PC >> 8) & 0xFF);
+        byte returnAddressLo = (byte)(PC & 0xFF);
+
+        mem.data[SP + 0x100] = returnAddressHi;
+        SP--;
+        mem.data[SP + 0x100] = returnAddressLo;
+        SP--;
+
+        PC = address; 
+    }
+
+    private void RTS(Memory mem, ushort address)
+    {
+        SP++;
+        ushort targetAddressLo = (ushort)(mem.data[SP + 0x100]);
+        SP++;
+        ushort targetAddressHi = (ushort)((mem.data[SP + 0x100] << 8));
+
+        ushort targetAddress = (ushort)(targetAddressHi | targetAddressLo);
+
+        PC = targetAddress;
+        PC++;
+    }
+
     public void Reset(Memory mem)
     {
         PC = 0xFFFC;
-        SP = 0x00;
+        SP = 0xFD;
 
         DecMode = 0;
         Acc = 0;

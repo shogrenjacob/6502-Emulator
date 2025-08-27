@@ -1,5 +1,4 @@
-﻿/* ENTRY POINT */
-public class Program
+﻿public class Program
 {
     public static void Main(string[] args)
     {
@@ -13,7 +12,7 @@ public class Program
         Input.GetFile();
         Memory.LoadROM(Input);
 
-        Cpu.Execute(3, Memory);
+        Cpu.Execute(5, Memory);
 
         Cpu.PrintPCSP();
         Cpu.PrintRegisters();
