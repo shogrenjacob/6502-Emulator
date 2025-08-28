@@ -25,14 +25,7 @@ public class CPU
     byte Acc;  // Accumulator
     byte RegX;  // Index Register X
     byte RegY;  // Index Register Y
-
-    byte CarryFlag = 1;
-    byte ZeroFlag = 1;
-    byte InterruptDisable = 1;
-    byte DecMode = 1;
-    byte BreakCmd = 1;
-    byte OverflowFlag = 1;
-    byte NegFlag = 1;
+    byte ProcessorStatusReg; // N V E B D I Z C
 
     Dictionary<byte, Instruction> LookupTable = new();
 
@@ -216,8 +209,8 @@ public class CPU
     public void PrintFlags()
     {
         Console.WriteLine("---------- Flags ----------");
-        Console.WriteLine($"Carry Flag: {CarryFlag} \n Zero Flag: {ZeroFlag} \n Interrupt Disable: {InterruptDisable}");
-        Console.WriteLine($"Decimal Mode: {DecMode} \n Break Command: {BreakCmd} \n Overflow Flag: {OverflowFlag} \n Negative Flag: {NegFlag}");
+        Console.WriteLine($"Carry Flag: {(ProcessorStatusReg & 0x01)} \n Zero Flag: {(ProcessorStatusReg & 0x02)} \n Interrupt Disable: {(ProcessorStatusReg & 0x04)}");
+        Console.WriteLine($"Decimal Mode: {(ProcessorStatusReg & 0x08)} \n Break Command: {(ProcessorStatusReg & 0x10)} \n Overflow Flag: {(ProcessorStatusReg & 0x40)} \n Negative Flag: {(ProcessorStatusReg & 0x80)}");
     }
 
     /* ADRESSING MODES */
@@ -310,7 +303,6 @@ public class CPU
         return (ushort)(baseAddress + RegY);
     }
 
-    // TEST ME
     private ushort Relative(Memory mem)
     {
         ushort address = PC;
@@ -323,7 +315,7 @@ public class CPU
     /* INSTRUCTIONS */
     private void BCC(Memory mem, ushort address)
     {
-        if (CarryFlag == 0)
+        if ((ProcessorStatusReg & 0x01) == 0)
         {
             PC = address;
         }
@@ -335,7 +327,7 @@ public class CPU
 
     private void BCS(Memory mem, ushort address)
     {
-        if (CarryFlag == 1)
+        if ((ProcessorStatusReg & 0x01) == 1)
         {
             PC = address;
         }
@@ -347,7 +339,7 @@ public class CPU
 
     private void BEQ(Memory mem, ushort address)
     {
-        if (ZeroFlag == 1)
+        if ((ProcessorStatusReg & 0x02) == 1)
         {
             PC = address;
         }
@@ -359,7 +351,7 @@ public class CPU
 
     private void BMI(Memory mem, ushort address)
     {
-        if (NegFlag == 1)
+        if ((ProcessorStatusReg & 0x80) == 1)
         {
             PC = address;
         }
@@ -371,7 +363,7 @@ public class CPU
 
     private void BNE(Memory mem, ushort address)
     {
-        if (ZeroFlag == 0)
+        if ((ProcessorStatusReg & 0x80) == 0)
         {
             PC = address;
         }
@@ -383,7 +375,7 @@ public class CPU
 
     private void BPL(Memory mem, ushort address)
     {
-        if (ZeroFlag == 0)
+        if ((ProcessorStatusReg & 0x80) == 0)
         {
             PC = address;
         }
@@ -395,7 +387,7 @@ public class CPU
 
     private void BVC(Memory mem, ushort address)
     {
-        if (OverflowFlag == 0)
+        if ((ProcessorStatusReg & 0x40) == 0)
         {
             PC = address;
         }
@@ -407,7 +399,7 @@ public class CPU
 
     private void BVS(Memory mem, ushort address)
     {
-        if (OverflowFlag == 1)
+        if ((ProcessorStatusReg & 0x40) == 1)
         {
             PC = address;
         }
@@ -419,19 +411,19 @@ public class CPU
 
     private void SEC(Memory mem, ushort address)
     {
-        CarryFlag = 1;
+        setFlag("C");
         PC++;
     }
 
     private void SED(Memory mem, ushort address)
     {
-        DecMode = 1;
+        setFlag("D");
         PC++;
     }
 
     private void SEI(Memory mem, ushort address)
     {
-        InterruptDisable = 1;
+        setFlag("I");
         PC++;
     }
 
@@ -441,16 +433,11 @@ public class CPU
 
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (Acc < 0)
+        if (Acc < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -462,16 +449,11 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (RegX < 0)
+        if (RegX < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -483,16 +465,11 @@ public class CPU
 
         if (RegY == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (RegY < 0)
+        if (RegY < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -504,16 +481,11 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (RegX < 0)
+        if (RegX < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -525,16 +497,11 @@ public class CPU
 
         if (RegY == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (RegY < 0)
+        if (RegY < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -546,16 +513,11 @@ public class CPU
 
         if (mem.data[address] == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
         else if (mem.data[address] < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -567,16 +529,11 @@ public class CPU
 
         if (mem.data[address] == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
         else if (mem.data[address] < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -588,16 +545,11 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
         else if (RegX < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -609,16 +561,11 @@ public class CPU
 
         if (RegY == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
         else if (RegY < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -630,16 +577,16 @@ public class CPU
 
         if (result >= 0)
         {
-            CarryFlag = 1;
+            setFlag("C");
 
             if (result == 0)
             {
-                ZeroFlag = 1;
+                setFlag("Z");
             }
         }
         else
         {
-            NegFlag = 1;
+            setFlag("N");
         }
 
         PC++;
@@ -651,16 +598,16 @@ public class CPU
 
         if (result >= 0)
         {
-            CarryFlag = 1;
+            setFlag("C");
 
             if (result == 0)
             {
-                ZeroFlag = 1;
+                setFlag("Z");
             }
         }
         else
         {
-            NegFlag = 1;
+            setFlag("N");
         }
 
         PC++;
@@ -672,16 +619,16 @@ public class CPU
 
         if (result >= 0)
         {
-            CarryFlag = 1;
+            setFlag("C");
 
             if (result == 0)
             {
-                ZeroFlag = 1;
+                setFlag("Z");
             }
         }
         else
         {
-            NegFlag = 1;
+           setFlag("N");
         }
 
         PC++;
@@ -689,25 +636,25 @@ public class CPU
 
     private void CLC(Memory mem, ushort address)
     {
-        CarryFlag = 0;
+        setFlag("C");
         PC++;
     }
 
     private void CLD(Memory mem, ushort address)
     {
-        DecMode = 0;
+        setFlag("D");
         PC++;
     }
 
     private void CLI(Memory mem, ushort address)
     {
-        InterruptDisable = 0;
+        setFlag("I");
         PC++;
     }
 
     private void CLV(Memory mem, ushort address)
     {
-        OverflowFlag = 0;
+        setFlag("V");
         PC++;
     }
 
@@ -730,23 +677,17 @@ public class CPU
 
     private void PLA(Memory mem, ushort address)
     {
+        SP++;
         Acc = mem.data[SP + 0x100];
 
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (Acc < 0)
+        if (Acc < 0)
         {
-            NegFlag = 1;
+            setFlag("N");
         }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
-        }
-
-        SP--;
         PC++;
     }
 
@@ -774,16 +715,11 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (RegX < 0)
+        if (RegX < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -795,16 +731,11 @@ public class CPU
 
         if (RegY == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (RegY < 0)
+        if (RegY < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -816,16 +747,11 @@ public class CPU
 
         if (RegX == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if (RegX < 0)
+        if (RegX < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -837,16 +763,11 @@ public class CPU
 
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+           setFlag("Z");
         }
-        else if (Acc < 0)
+        if (Acc < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -864,16 +785,11 @@ public class CPU
 
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
         else if (Acc < 0)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            ZeroFlag = 0;
-            NegFlag = 0;
+            setFlag("N");
         }
 
         PC++;
@@ -885,16 +801,11 @@ public class CPU
 
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if ((Acc & 128) == 128)
+        if ((Acc & 128) == 128)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            ZeroFlag = 0;
-            NegFlag = 0;
+            setFlag("N");
         }
     }
 
@@ -909,17 +820,17 @@ public class CPU
 
         if ((result & 128) == 128)
         {
-            NegFlag = 1;
+            setFlag("N");
         }
 
         if ((result & 64) == 64)
         {
-            OverflowFlag = 1;
+            setFlag("V");
         }
 
         if (result == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
     }
 
@@ -929,16 +840,11 @@ public class CPU
 
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if ((byte)(Acc & 128) == 128)
+        if ((byte)(Acc & 128) == 128)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
     }
 
@@ -948,16 +854,11 @@ public class CPU
 
         if (Acc == 0)
         {
-            ZeroFlag = 1;
+            setFlag("Z");
         }
-        else if ((byte)(Acc & 128) == 128)
+        if ((byte)(Acc & 128) == 128)
         {
-            NegFlag = 1;
-        }
-        else
-        {
-            NegFlag = 0;
-            ZeroFlag = 0;
+            setFlag("N");
         }
     }
 
@@ -987,21 +888,26 @@ public class CPU
         PC++;
     }
 
+    private void PHP(Memory mem, ushort address)
+    {
+        mem.data[SP + 0x100] = ProcessorStatusReg;
+        SP--;
+        PC++;
+    }
+
+    private void PLP(Memory mem, ushort address)
+    {
+        SP++;
+        ProcessorStatusReg = mem.data[SP + 0x100];
+        PC++;
+    }
+
     public void Reset(Memory mem)
     {
         PC = 0xFFFC;
         SP = 0xFD;
 
-        DecMode = 0;
-        Acc = 0;
-        RegX = 0;
-        RegY = 0;
-        CarryFlag = 0;
-        ZeroFlag = 0;
-        InterruptDisable = 0;
-        BreakCmd = 0;
-        OverflowFlag = 0;
-        NegFlag = 0;
+        ProcessorStatusReg = 0;
 
         mem.init();
     }
@@ -1015,6 +921,40 @@ public class CPU
     {
         mem.data[PC] = val;
         return mem.data[PC];
+    }
+
+    public void setFlag(string flag)
+    {
+        switch (flag)
+        {
+            case "N":
+                ProcessorStatusReg |= 0x80;
+                break;
+
+            case "V":
+                ProcessorStatusReg |= 0x40;
+                break;
+
+            case "B":
+                ProcessorStatusReg |= 0x10;
+                break;
+
+            case "D":
+                ProcessorStatusReg |= 0x08;
+                break;
+
+            case "I":
+                ProcessorStatusReg |= 0x04;
+                break;
+
+            case "Z":
+                ProcessorStatusReg |= 0x02;
+                break;
+
+            case "C":
+                ProcessorStatusReg |= 0x01;
+                break;
+        }
     }
 
     /* FETCH, DECODE, EXECUTE */
