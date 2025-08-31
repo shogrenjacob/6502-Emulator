@@ -199,6 +199,27 @@ public class CPU
         // BRK, RTI
         LookupTable.Add(0x00, new Instruction(Implied, BRK, 7));
         LookupTable.Add(0x40, new Instruction(Implied, RTI, 6));
+
+        // ADC
+        LookupTable.Add(0x69, new Instruction(Immediate, ADC, 2));
+        LookupTable.Add(0x65, new Instruction(ZeroPage, ADC, 3));
+        LookupTable.Add(0x75, new Instruction(ZeroPageX, ADC, 4));
+        LookupTable.Add(0x6D, new Instruction(Absolute, ADC, 4));
+        LookupTable.Add(0x7D, new Instruction(AbsoluteX, ADC, 4));
+        LookupTable.Add(0x79, new Instruction(AbsoluteY, ADC, 4));
+        LookupTable.Add(0x61, new Instruction(IndexedIndirect, ADC, 6));
+        LookupTable.Add(0x71, new Instruction(IndirectIndexed, ADC, 5));
+
+        /* SBC
+        LookupTable.Add(0xE9, new Instruction(Immediate, SBC, 2));
+        LookupTable.Add(0xE5, new Instruction(ZeroPage, SBC, 3));
+        LookupTable.Add(0xF5, new Instruction(ZeroPageX, SBC, 4));
+        LookupTable.Add(0xED, new Instruction(Absolute, SBC, 4));
+        LookupTable.Add(0xFD, new Instruction(AbsoluteX, SBC, 4));
+        LookupTable.Add(0xF9, new Instruction(AbsoluteY, SBC, 4));
+        LookupTable.Add(0xE1, new Instruction(IndexedIndirect, SBC, 6));
+        LookupTable.Add(0xF1, new Instruction(IndirectIndexed, SBC, 5));
+        */
     }
 
     // For Debugging
@@ -217,8 +238,8 @@ public class CPU
     public void PrintFlags()
     {
         Console.WriteLine("---------- Flags ----------");
-        Console.WriteLine($"Carry Flag: {(ProcessorStatusReg & 0x01)} \n Zero Flag: {(ProcessorStatusReg & 0x02)} \n Interrupt Disable: {(ProcessorStatusReg & 0x04)}");
-        Console.WriteLine($"Decimal Mode: {(ProcessorStatusReg & 0x08)} \n Break Command: {(ProcessorStatusReg & 0x10)} \n Overflow Flag: {(ProcessorStatusReg & 0x40)} \n Negative Flag: {(ProcessorStatusReg & 0x80)}");
+        Console.WriteLine($"Carry Flag: {getFlag("C")} \n Zero Flag: {getFlag("Z")} \n Interrupt Disable: {getFlag("I")}");
+        Console.WriteLine($"Decimal Mode: {getFlag("D")} \n Break Command: {getFlag("B")} \n Overflow Flag: {getFlag("V")} \n Negative Flag: {getFlag("N")}");
     }
 
     /* ADRESSING MODES */
@@ -914,6 +935,33 @@ public class CPU
         PC = (ushort)(pcHi << 8 | pcLo);
     }
 
+    private void ADC(Memory mem, ushort address)
+    {
+        byte value = mem.data[address];
+        ushort temp = (byte)(value + (byte)(getFlag("C")));
+
+        if (temp > 255)
+        {
+            setFlag("C");
+        }
+        if (temp == 0)
+        {
+            setFlag("Z");
+        }
+        if (((~((byte)Acc ^ (byte)value) & ((byte)address ^ (byte)temp)) & 0x0080) != 0)
+        {
+            setFlag("V");
+        }
+        if ((temp & 0x80) != 0)
+        {
+            setFlag("N");
+        }
+
+        Acc += (byte)temp;
+
+        PC++;
+    }
+
     public void Reset(Memory mem)
     {
         mem.init();
@@ -966,6 +1014,76 @@ public class CPU
                 ProcessorStatusReg |= 0x01;
                 break;
         }
+    }
+
+    public int getFlag(string flag)
+    {
+        int flagStatus = 0;
+        byte mask;
+
+        switch (flag)
+        {
+            case "N":
+
+                mask = (byte)(1 << 7);
+                if ((mask & ProcessorStatusReg) != 0)
+                {
+                    flagStatus = 1;
+                }
+                break;
+
+            case "V":
+
+                mask = (byte)(1 << 6);
+                if ((mask & ProcessorStatusReg) != 0)
+                {
+                    flagStatus = 1;
+                }
+                break;
+
+            case "B":
+
+                mask = (byte)(1 << 4);
+                if ((mask & ProcessorStatusReg) != 0)
+                {
+                    flagStatus = 1;
+                }
+                break;
+
+            case "D":
+                mask = (byte)(1 << 3);
+                if ((mask & ProcessorStatusReg) != 0)
+                {
+                    flagStatus = 1;
+                }
+                break;
+
+            case "I":
+                mask = (byte)(1 << 2);
+                if ((mask & ProcessorStatusReg) != 0)
+                {
+                    flagStatus = 1;
+                }
+                break;
+
+            case "Z":
+                mask = (byte)(1 << 1);
+                if ((mask & ProcessorStatusReg) != 0)
+                {
+                    flagStatus = 1;
+                }
+                break;
+
+            case "C":
+                mask = (byte)(1 << 0);
+                if ((mask & ProcessorStatusReg) != 0)
+                {
+                    flagStatus = 1;
+                }
+                break;
+        }
+
+        return flagStatus;
     }
 
     /* FETCH, DECODE, EXECUTE */
