@@ -412,19 +412,16 @@ public class CPU
     private void SEC(Memory mem, ushort address)
     {
         setFlag("C");
-        PC++;
     }
 
     private void SED(Memory mem, ushort address)
     {
         setFlag("D");
-        PC++;
     }
 
     private void SEI(Memory mem, ushort address)
     {
         setFlag("I");
-        PC++;
     }
 
     private void LDA(Memory mem, ushort address)
@@ -487,8 +484,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void INY(Memory mem, ushort address)
@@ -503,8 +498,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void INC(Memory mem, ushort address)
@@ -551,8 +544,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void DEY(Memory mem, ushort address)
@@ -567,8 +558,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void CMP(Memory mem, ushort address)
@@ -637,25 +626,21 @@ public class CPU
     private void CLC(Memory mem, ushort address)
     {
         setFlag("C");
-        PC++;
     }
 
     private void CLD(Memory mem, ushort address)
     {
         setFlag("D");
-        PC++;
     }
 
     private void CLI(Memory mem, ushort address)
     {
         setFlag("I");
-        PC++;
     }
 
     private void CLV(Memory mem, ushort address)
     {
         setFlag("V");
-        PC++;
     }
 
     private void JMP(Memory mem, ushort address)
@@ -665,14 +650,13 @@ public class CPU
 
     private void NOP(Memory mem, ushort address)
     {
-        PC++;
+
     }
 
     private void PHA(Memory mem, ushort address)
     {
         mem.data[SP + 0x100] = Acc;
         SP--;
-        PC++;
     }
 
     private void PLA(Memory mem, ushort address)
@@ -688,7 +672,6 @@ public class CPU
         {
             setFlag("N");
         }
-        PC++;
     }
 
     private void STA(Memory mem, ushort address)
@@ -721,8 +704,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void TAY(Memory mem, ushort address)
@@ -737,8 +718,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void TSX(Memory mem, ushort address)
@@ -753,8 +732,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void TXA(Memory mem, ushort address)
@@ -791,8 +768,6 @@ public class CPU
         {
             setFlag("N");
         }
-
-        PC++;
     }
 
     private void AND(Memory mem, ushort address)
