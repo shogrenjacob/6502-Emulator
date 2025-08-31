@@ -191,6 +191,14 @@ public class CPU
         // Subroutines
         LookupTable.Add(0x60, new Instruction(Implied, RTS, 6));
         LookupTable.Add(0x20, new Instruction(Absolute, JSR, 6));
+
+        // PHP, PLP
+        LookupTable.Add(0x08, new Instruction(Implied, PHP, 3));
+        LookupTable.Add(0x28, new Instruction(Implied, PLP, 4));
+
+        // BRK, RTI
+        LookupTable.Add(0x00, new Instruction(Implied, BRK, 7));
+        LookupTable.Add(0x40, new Instruction(Implied, RTI, 6));
     }
 
     // For Debugging
@@ -867,24 +875,52 @@ public class CPU
     {
         mem.data[SP + 0x100] = ProcessorStatusReg;
         SP--;
-        PC++;
     }
 
     private void PLP(Memory mem, ushort address)
     {
         SP++;
         ProcessorStatusReg = mem.data[SP + 0x100];
-        PC++;
+    }
+
+    private void BRK(Memory mem, ushort address)
+    {
+        byte pcHi = (byte)(PC >> 8);
+        mem.data[SP + 0x100] = pcHi;
+        SP--;
+
+        byte pcLo = (byte)(PC & 0xFF);
+        mem.data[SP + 0x100] = pcLo;
+        SP--;
+
+        setFlag("B");
+        mem.data[SP + 0x100] = ProcessorStatusReg;
+        SP--;
+
+        PC = (ushort)((mem.data[0xFFFD] << 8) | mem.data[0xFFFC]);
+    }
+
+    private void RTI(Memory mem, ushort address)
+    {
+        SP++;
+        ProcessorStatusReg = mem.data[SP + 0x100];
+
+        SP++;
+        byte pcLo = mem.data[SP + 0x100];
+
+        SP++;
+        byte pcHi = mem.data[SP + 0x100];
+
+        PC = (ushort)(pcHi << 8 | pcLo);
     }
 
     public void Reset(Memory mem)
     {
-        PC = 0xFFFC;
+        mem.init();
+        PC = (ushort)((mem.data[0xFFFD] << 8) | mem.data[0xFFFC]);
         SP = 0xFD;
 
         ProcessorStatusReg = 0;
-
-        mem.init();
     }
 
     public byte Read(Memory mem)

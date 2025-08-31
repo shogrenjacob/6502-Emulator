@@ -12,6 +12,8 @@ public class Memory
         {
             data[i] = 0;
         }
+        data[0xFFFC] = 0x00;
+        data[0xFFFD] = 0x80;
     }
 
     public void LoadROM(Input input)
