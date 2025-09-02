@@ -212,7 +212,7 @@ public class CPU
         LookupTable.Add(0x61, new Instruction(IndexedIndirect, ADC, 6));
         LookupTable.Add(0x71, new Instruction(IndirectIndexed, ADC, 5));
 
-        /* SBC
+        // SBC
         LookupTable.Add(0xE9, new Instruction(Immediate, SBC, 2));
         LookupTable.Add(0xE5, new Instruction(ZeroPage, SBC, 3));
         LookupTable.Add(0xF5, new Instruction(ZeroPageX, SBC, 4));
@@ -221,7 +221,7 @@ public class CPU
         LookupTable.Add(0xF9, new Instruction(AbsoluteY, SBC, 4));
         LookupTable.Add(0xE1, new Instruction(IndexedIndirect, SBC, 6));
         LookupTable.Add(0xF1, new Instruction(IndirectIndexed, SBC, 5));
-        */
+        
 
         // ASL
         LookupTable.Add(0x0A, new Instruction(Accumulator, ASL, 2));
@@ -709,7 +709,7 @@ public class CPU
 
     private void NOP(Memory mem, ushort address)
     {
-
+        // Yup, this does nothing :)
     }
 
     private void PHA(Memory mem, ushort address)
@@ -1186,6 +1186,34 @@ public class CPU
 
         Acc += (byte)temp;
 
+        PC++;
+    }
+
+    private void SBC(Memory mem, ushort address)
+    {
+        ushort value = (ushort)(mem.data[address] ^ 0x00FF);
+
+        ushort temp = (ushort)(value + (ushort)(getFlag("C")));
+
+        if (temp > 255)
+        {
+            setFlag("C");
+        }
+        if (temp == 0)
+        {
+            setFlag("Z");
+        }
+        if (((~((byte)Acc ^ (byte)value) & ((byte)address ^ (byte)temp)) & 0x0080) != 0)
+        {
+            setFlag("V");
+        }
+
+        Acc += (byte)(temp + 1);
+
+        if ((Acc & 0x80) != 0)
+        {
+            setFlag("N");
+        }
         PC++;
     }
 
