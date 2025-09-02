@@ -27,6 +27,8 @@ public class CPU
     byte RegY;  // Index Register Y
     byte ProcessorStatusReg; // N V E B D I Z C
 
+    byte currentOpcode;
+
     Dictionary<byte, Instruction> LookupTable = new();
 
     public void LoadLookupTable()
@@ -220,6 +222,34 @@ public class CPU
         LookupTable.Add(0xE1, new Instruction(IndexedIndirect, SBC, 6));
         LookupTable.Add(0xF1, new Instruction(IndirectIndexed, SBC, 5));
         */
+
+        // ASL
+        LookupTable.Add(0x0A, new Instruction(Accumulator, ASL, 2));
+        LookupTable.Add(0x06, new Instruction(ZeroPage, ASL, 5));
+        LookupTable.Add(0x16, new Instruction(ZeroPageX, ASL, 6));
+        LookupTable.Add(0x0E, new Instruction(Absolute, ASL, 6));
+        LookupTable.Add(0x1E, new Instruction(AbsoluteX, ASL, 7));
+
+        // LSR
+        LookupTable.Add(0x4A, new Instruction(Accumulator, LSR, 2));
+        LookupTable.Add(0x46, new Instruction(ZeroPage, LSR, 5));
+        LookupTable.Add(0x56, new Instruction(ZeroPageX, LSR, 6));
+        LookupTable.Add(0x4E, new Instruction(Absolute, LSR, 6));
+        LookupTable.Add(0x5E, new Instruction(AbsoluteX, LSR, 7));
+
+        // ROL
+        LookupTable.Add(0x2A, new Instruction(Accumulator, ROL, 2));
+        LookupTable.Add(0x26, new Instruction(ZeroPage, ROL, 5));
+        LookupTable.Add(0x36, new Instruction(ZeroPageX, ROL, 6));
+        LookupTable.Add(0x2E, new Instruction(Absolute, ROL, 6));
+        LookupTable.Add(0x3E, new Instruction(AbsoluteX, ROL, 7));
+
+        // ROR
+        LookupTable.Add(0x6A, new Instruction(Accumulator, ROR, 2));
+        LookupTable.Add(0x66, new Instruction(ZeroPage, ROR, 5));
+        LookupTable.Add(0x76, new Instruction(ZeroPageX, ROR, 6));
+        LookupTable.Add(0x6E, new Instruction(Absolute, ROR, 6));
+        LookupTable.Add(0x7E, new Instruction(AbsoluteX, ROR, 7));
     }
 
     // For Debugging
@@ -816,6 +846,203 @@ public class CPU
     private void ASL(Memory mem, ushort address)
     {
 
+        if (currentOpcode == 0x0A)
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((Acc & (1 << 7)) != 0)
+            {
+                setFlag("C");
+            }
+
+            Acc = (byte)(Acc << 1);
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((Acc & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (Acc == 0)
+            {
+                setFlag("Z");
+            }
+        }
+        else
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((mem.data[address] & (1 << 7)) != 0)
+            {
+                setFlag("C");
+            }
+
+            mem.data[address] = (byte)(mem.data[address] << 1);
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((mem.data[address] & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (mem.data[address] == 0)
+            {
+                setFlag("Z");
+            }
+
+            PC++;
+        }
+    }
+
+    private void LSR(Memory mem, ushort address)
+    {
+
+        if (currentOpcode == 0x4A) // Check for Accumulator opcode
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((Acc & 1) != 0)
+            {
+                setFlag("C");
+            }
+
+            Acc = (byte)(Acc >> 1);
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((Acc & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (Acc == 0)
+            {
+                setFlag("Z");
+            }
+        }
+        else
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((mem.data[address] & 1) != 0)
+            {
+                setFlag("C");
+            }
+
+            mem.data[address] = (byte)(mem.data[address] >> 1);
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((mem.data[address] & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (mem.data[address] == 0)
+            {
+                setFlag("Z");
+            }
+
+            PC++;
+        }
+    }
+
+    private void ROL(Memory mem, ushort address)
+    {
+        int cStatus = getFlag("C");
+
+        if (currentOpcode == 0x2A)
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((Acc & (1 << 7)) != 0)
+            {
+                setFlag("C");
+            }
+
+            Acc = (byte)(Acc << 1);
+            Acc |= (byte)cStatus;
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((Acc & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (Acc == 0)
+            {
+                setFlag("Z");
+            }
+        }
+        else
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((mem.data[address] & (1 << 7)) != 0)
+            {
+                setFlag("C");
+            }
+
+            mem.data[address] = (byte)(mem.data[address] << 1);
+            mem.data[address] |= (byte)cStatus;
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((mem.data[address] & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (mem.data[address] == 0)
+            {
+                setFlag("Z");
+            }
+
+            PC++;
+        }
+    }
+
+    private void ROR(Memory mem, ushort address)
+    {
+        int cStatus = getFlag("C");
+
+        if (currentOpcode == 0x6A) // Check for Accumulator opcode
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((Acc & 1) != 0)
+            {
+                setFlag("C");
+            }
+
+            Acc = (byte)(Acc >> 1);
+            Acc |= (byte)cStatus;
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((Acc & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (Acc == 0)
+            {
+                setFlag("Z");
+            }
+        }
+        else
+        {
+            // Check if 7th bit is set before shift to determine if we need to carry
+            if ((mem.data[address] & 1) != 0)
+            {
+                setFlag("C");
+            }
+
+            mem.data[address] = (byte)(mem.data[address] >> 1);
+            mem.data[address] |= (byte)cStatus;
+
+            // Check 7th bit AFTER to determine if it is negative
+            if ((mem.data[address] & (1 << 7)) != 0)
+            {
+                setFlag("N");
+            }
+
+            if (mem.data[address] == 0)
+            {
+                setFlag("Z");
+            }
+
+            PC++;
+        }
     }
 
     private void BIT(Memory mem, ushort address)
@@ -1092,11 +1319,11 @@ public class CPU
         // One cycle needed per command
         while (cycles > 0)
         {
-            byte instruction = Read(mem);
+            currentOpcode = Read(mem);
             PC++;
             cycles--;
 
-            Instruction CurrentInstruction = LookupTable[instruction];
+            Instruction CurrentInstruction = LookupTable[currentOpcode];
             ushort address = CurrentInstruction.AddressingMode(mem);
 
             CurrentInstruction.Operation(mem, address);
