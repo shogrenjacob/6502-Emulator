@@ -1342,8 +1342,9 @@ public class CPU
     }
 
     /* FETCH, DECODE, EXECUTE */
-    public void Execute(Int32 cycles, Memory mem)
+    public void Execute(Memory mem)
     {
+        int cycles = 1;
         // One cycle needed per command
         while (cycles > 0)
         {
@@ -1352,9 +1353,21 @@ public class CPU
             cycles--;
 
             Instruction CurrentInstruction = LookupTable[currentOpcode];
+
+            if (CurrentInstruction.Cycles > 0)
+            {
+                cycles++;
+            }
+
             ushort address = CurrentInstruction.AddressingMode(mem);
 
             CurrentInstruction.Operation(mem, address);
+
+            // For now, program MUST end with JMP 0xFFFF or process will run infinitely
+            if (PC == 0xFFFF)
+            {
+                cycles = 0;
+            }
         }
     }
 }

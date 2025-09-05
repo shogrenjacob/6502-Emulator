@@ -24,9 +24,12 @@ public class Input
                 else if (path == "test")
                 {
                     // Parse test.txt from repo
-                    Console.WriteLine("Parsing Test");
-                    ParseTxtFile("../../../test.txt"); 
+                    ParseTxtFile("../../../tests/test.txt");
                     break;
+                }
+                else if (path == "fib")
+                {
+                    ParseTxtFile("../../../tests/fib.txt");
                 }
                 else
                 {

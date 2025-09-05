@@ -12,7 +12,7 @@
         Input.GetFile();
         Memory.LoadROM(Input);
 
-        Cpu.Execute(2, Memory);
+        Cpu.Execute(Memory);
 
         Cpu.PrintPCSP();
         Cpu.PrintRegisters();
