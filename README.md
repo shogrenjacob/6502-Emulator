@@ -3,8 +3,8 @@
 This is (obviously) my C# implementation of a 6502 Processor. Currently, you can write out a .txt file with a set memory state to run programs on the processor. A .txt file wanting to achieve this should be formatted like the following:
 
 ```
-0x8000 A9
-0x8001 FF
+0x8000 0xA9
+0x8001 0xFF
 ```
 
 Where the left column is the memory location and the right column is the opcode or data. Note that you don't have to write the memory contents in ascending order, that's just an organization preference for me.
