@@ -13,7 +13,7 @@ As for the memory format, program memory starts at _0x8000_ and ends at _0xFFFC_
 
 ![Memory Layout Image](/imgs/memory_layout.png "My 6502 Memory Layout")
 
-When developing a ROM, currently the processor has a quirk with cycle counts where, to terminate a program, your must end your program with a _JMP 0x9999_ command. Otherwise, the program will run infinitely. Other than that, the source code in its current form will work as you expect and print the processor status after your program runs to show the results of your program.
+When developing a ROM, currently the processor has a quirk with cycle counts where, to terminate a program, you must end your program with a _JMP 0x9999_ command. Otherwise, the program will run infinitely. Other than that, the source code in its current form will work as you expect and print the processor status after your program runs to show the results of your program.
 
 ## Running The Emulator
 The emulator is just a Visual Studio project running on .NET 8, so as long as you have the .NET 8 runtime and Visual Studio (or Vscode with the necessary extensions) it should run on any machine!
@@ -23,7 +23,7 @@ Once you start up the program, you'll just need to provide the absolute path to 
 | Test Name  | Description  | 
 |---|---|
 | test | Loads 0xFF into the Accumulator. |
-| fibb | Loads the 4th, 5th, and 6th Fibonacci Numbers into the X Register, Y Register, and Accumulator respectively.|
+| fib | Loads the 4th, 5th, and 6th Fibonacci Numbers into the X Register, Y Register, and Accumulator respectively.|
 
 In the future, I want to fix that cycling quirk as well as write an assembler to write 6502 Assembly for the Emulator.
 
