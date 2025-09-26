@@ -15,7 +15,7 @@ As for the memory format, program memory starts at _0x8000_ and ends at _0xFFFC_
 
 When developing a ROM, currently the processor has a quirk with cycle counts where, to terminate a program, you must end your program with a _JMP 0x9999_ command. Otherwise, the program will run infinitely. Other than that, the source code in its current form will work as you expect and print the processor status after your program runs to show the results of your program.
 
-> This is actually accurate to how the real processor runs! You wouldn't want the processor to shut down once it's done executing your instructions would you? In real life, the processor is totally happy just running infinitely and getting instructions but for the current form of my emulator, stopping it after it finishes makes a bit more sense.
+> This is actually accurate to how the real processor runs! You wouldn't want the processor to shut down once it's done executing your instructions would you? In real life, the processor is totally happy just running infinitely and getting instructions, but for the current form of my emulator stopping it after it finishes makes a bit more sense.
 
 ## Running The Emulator
 The emulator is just a Visual Studio project running on .NET 8, so as long as you have the .NET 8 runtime and Visual Studio (or Vscode with the necessary extensions) it should run on any machine!
