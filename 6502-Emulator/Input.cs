@@ -30,6 +30,7 @@ public class Input
                 else if (path == "fib")
                 {
                     ParseTxtFile("../../../tests/fib.txt");
+                    break;
                 }
                 else
                 {

@@ -23,7 +23,7 @@ Once you start up the program, you'll just need to provide the absolute path to 
 | Test Name  | Description  | 
 |---|---|
 | test | Loads 0xFF into the Accumulator. |
-| fib | Loads the 4th, 5th, and 6th Fibonacci Numbers into the X Register, Y Register, and Accumulator respectively.|
+| fib | Calculates and loads the 6th Fibonacci Number into the Accumulator.|
 
 In the future, I want to fix that cycling quirk as well as write an assembler to write 6502 Assembly for the Emulator.
 
